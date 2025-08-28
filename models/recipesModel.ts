@@ -26,6 +26,19 @@ const recipes = [
 }
 ]
 
+type recipeBody = {
+  id:string;
+  title:string;
+  description:string;
+  ingredients:string[];
+  instructions:string[];
+  cookingTime:number;
+  servings:number;
+  difficulty:string;
+  rating:number;
+  createdAt:string;
+}
+
 export type filterObject = {
   difficulty:string|null|undefined;
   maxCookingTime:string|null|undefined;
@@ -57,4 +70,17 @@ function getRecipeById(recipeId:string){
   return recipe;
 }
 
-export default {getRecipes,getRecipeById}
+function updateRecipe(recipeId:string, body:recipeBody){
+  const recipe = getRecipeById(recipeId);
+  recipe.title = body.title;
+  recipe.description = body.description;
+  recipe.difficulty = body.difficulty;
+  recipe.cookingTime = body.cookingTime;
+  recipe.createdAt = body.createdAt;
+  recipe.ingredients = body.ingredients;
+  recipe.instructions = body.instructions;
+  recipe.rating = body.rating;
+  recipe.servings = body.servings;
+}
+
+export default {getRecipes,getRecipeById,updateRecipe};

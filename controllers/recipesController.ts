@@ -19,4 +19,12 @@ function getRecipeById(req:Request,res:Response){
     }
 }
 
-export default {getRecipes, getRecipeById};
+function updateRecipe(req:Request,res:Response){
+    const recipeId = req.params.id;
+    const updatedRecipe = req.body;
+    recipesModel.updateRecipe(recipeId,updatedRecipe);
+    res.status(201);
+    res.send(recipesModel.getRecipeById(recipeId));
+}
+
+export default {getRecipes, getRecipeById, updateRecipe};

@@ -20,6 +20,7 @@
     "ajv-errors": "^3.0.0",
     "ajv-formats": "^3.0.1",
     "express": "^5.1.0",
+    "morgan": "^1.10.1",
     "uuid": "^11.1.0"
   }
 }

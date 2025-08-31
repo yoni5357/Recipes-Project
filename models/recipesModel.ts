@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 
 const recipes = [
   {
@@ -72,6 +73,9 @@ function getRecipeById(recipeId:string){
 
 function updateRecipe(recipeId:string, body:recipeBody){
   const recipe = getRecipeById(recipeId);
+  if(!recipe){
+    return false;
+  }
   recipe.title = body.title;
   recipe.description = body.description;
   recipe.difficulty = body.difficulty;
@@ -81,6 +85,47 @@ function updateRecipe(recipeId:string, body:recipeBody){
   recipe.instructions = body.instructions;
   recipe.rating = body.rating;
   recipe.servings = body.servings;
+  return true;
 }
 
-export default {getRecipes,getRecipeById,updateRecipe};
+function addRecipe(body:recipeBody){
+  const recipeId = uuidv4();
+  const newRecipe = {id:recipeId,...body};
+  recipes.push(newRecipe);
+  return newRecipe;
+}
+
+function deleteRecipe(recipeId:string){
+  const recipeToDelete = recipes.find(r => r.id = recipeId);
+  if(!recipeToDelete){
+    return false;
+  }
+  const recipeIndex = recipes.indexOf(recipeToDelete);
+  delete recipes[recipeIndex];
+  return true;
+}
+
+function getStats(){
+  const totalRecipes = recipes.length;
+  const averageCookingTime = getAvereageCookingTime();
+  const recipesByDifficulty = getRecipesByDifficulty();
+  return {totalRecipes:totalRecipes, averageCookingTime:averageCookingTime, recipesByDifficulty:recipesByDifficulty};
+}
+
+function getAvereageCookingTime(){
+  const avg = recipes.reduce((acc, recipe) => acc + recipe.cookingTime, 0) / recipes.length;
+  return avg;
+}
+function getRecipesByDifficulty(){
+  const difficultyCount: {[key: string]: number} = {};
+  recipes.forEach((recipe) => {
+    if(difficultyCount[recipe.difficulty]){
+      difficultyCount[recipe.difficulty]++;
+    } else {
+      difficultyCount[recipe.difficulty] = 1;
+    }
+  });
+  return difficultyCount;
+}
+
+export default {getRecipes,getRecipeById,updateRecipe,addRecipe,deleteRecipe,getStats};

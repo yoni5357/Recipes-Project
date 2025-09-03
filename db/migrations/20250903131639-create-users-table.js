@@ -13,9 +13,11 @@ module.exports = {
       username: {
         type: Sequelize.STRING,
         unique: true,
-        min: 3,
-        max: 30,
         allowNull: false,
+        validate:{
+          notEmpty: true,
+          len:[3,30]
+        }
       },
       email: {
         type: Sequelize.STRING,
@@ -45,20 +47,20 @@ module.exports = {
       },
     });
 
-    // Step 2: Clear existing data from recipes (before adding FK constraint)
-    await queryInterface.bulkDelete("recipes", {});
+    // // Step 2: Clear existing data from recipes (before adding FK constraint)
+    // await queryInterface.bulkDelete("recipes", {});
 
-    // Step 3: Add foreign key column
-    await queryInterface.addColumn("recipes", "userId", {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-      references: {
-        model: "users",
-        key: "id",
-      },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE",
-    });
+    // // Step 3: Add foreign key column
+    // await queryInterface.addColumn("recipes", "userId", {
+    //   type: Sequelize.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "users",
+    //     key: "id",
+    //   },
+    //   onUpdate: "CASCADE",
+    //   onDelete: "CASCADE",
+    // });
   },
 
   async down(queryInterface, Sequelize) {

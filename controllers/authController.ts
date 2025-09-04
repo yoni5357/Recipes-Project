@@ -10,7 +10,7 @@ async function addUser(req:Request, res:Response){
     const user = await usersModel.addUser(body);
     const token = jwt.sign(user,process.env.JWT_SECRET);
     res.status(201);
-    res.send({...user,token});
+    res.send({success:true,status:201,message:"User registered successfully",user:{...user},token});
 }
 
 export default {addUser};

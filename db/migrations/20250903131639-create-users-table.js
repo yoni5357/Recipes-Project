@@ -44,27 +44,12 @@ module.exports = {
       updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
+        defaultValue: Sequelize.fn("NOW"),
       },
     });
-
-    // // Step 2: Clear existing data from recipes (before adding FK constraint)
-    // await queryInterface.bulkDelete("recipes", {});
-
-    // // Step 3: Add foreign key column
-    // await queryInterface.addColumn("recipes", "userId", {
-    //   type: Sequelize.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "users",
-    //     key: "id",
-    //   },
-    //   onUpdate: "CASCADE",
-    //   onDelete: "CASCADE",
-    // });
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn("recipes", "userId");
     await queryInterface.dropTable("users");
   },
 };

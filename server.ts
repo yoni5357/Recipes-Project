@@ -1,15 +1,15 @@
 import express, { NextFunction, Request, Response } from "express";
 import recipesRouter from "./routes/recipesRouter";
+import authRouter from "./routes/authRouter";
 import { BaseError } from "./errors";
 import morgan from "morgan";
-import { Sequelize } from "sequelize";
+import { sequelize } from "./connections";
 import dotenv from 'dotenv';
 dotenv.config();
 
 const server = express();
 const port = 3030;
 const logFormat = ':date[iso] :method :status';
-const sequelize = new Sequelize(process.env.DB_CONNECTION);
 
 server.use(express.json());
 server.use(morgan(logFormat));
@@ -24,6 +24,7 @@ async function testConnection() {
 }
 
 server.use("/api/recipes",recipesRouter);
+server.use("/api/auth", authRouter);
 
 server.listen(port, async () => {
     console.log("Server listening on port ", port);

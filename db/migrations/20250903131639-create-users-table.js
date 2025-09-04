@@ -6,7 +6,7 @@ module.exports = {
     await queryInterface.createTable("users", {
       id: {
         type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4, //not sure if needed
+        defaultValue: Sequelize.literal('(UUID())'), //not sure if needed
         primaryKey: true,
         allowNull: false,
       },
@@ -39,12 +39,12 @@ module.exports = {
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn("NOW"),
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
       updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn("NOW"),
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
     });
   },

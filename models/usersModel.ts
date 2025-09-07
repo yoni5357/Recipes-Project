@@ -18,6 +18,15 @@ type userBody = {
     lastName:string
 }
 
+type fullUser = {
+    id:string,
+    username:string,
+    password:string,
+    email:string,
+    firstName:string,
+    lastName:string
+}
+
 function encryptPassword(password:string){
     const saltRounds = 10;
     const salt = bcrypt.genSaltSync(saltRounds);
@@ -48,4 +57,17 @@ async function addUser(body:userBody){
     return {id,username,email,firstName,lastName} as registeredUser
 }
 
-export default {addUser};
+async function getUserByEmail(email:string){
+    const [result] = await sequelize.query(
+        `SELECT * FROM users
+        WHERE email = :email`,
+        {
+            replacements:{email},
+        }
+    )
+    console.log(result);
+    const user = result[0] as fullUser;
+    return user;
+}
+
+export default {addUser,getUserByEmail};

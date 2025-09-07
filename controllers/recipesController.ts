@@ -19,14 +19,20 @@ async function getRecipeById(req:Request,res:Response){
     }
 }
 
-function updateRecipe(req:Request,res:Response){
+async function updateRecipe(req:Request,res:Response){
     const recipeId = req.params.id;
     const updatedRecipe = req.body;
-    if(!recipesModel.updateRecipe(recipeId,updatedRecipe)){
-        res.sendStatus(404);
-    } else {
-        res.status(201);
-        res.send(recipesModel.getRecipeById(recipeId));
+    const file = req.file;
+    try{
+        const newRecipe = await recipesModel.updateRecipe(recipeId,updatedRecipe,file);
+        if(!newRecipe){
+            res.sendStatus(404);
+        } else {
+            res.status(201);
+            res.send(newRecipe);
+        }
+    }catch(err){
+        console.error("Error updating recipe: ",err);
     }
 }
 

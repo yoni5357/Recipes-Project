@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
-import {v2 as cloudinary} from 'cloudinary';
+import { v2 as cloudinary } from "cloudinary";
 import { sequelize } from "../connections";
 import fs from "fs";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const recipes = [
@@ -48,8 +48,9 @@ type recipeBody = {
   difficulty: string;
   rating: number;
   isPublic: boolean;
-  imageUrl:string;
+  imageUrl: string;
   createdAt: string;
+  userId?: string;
 };
 
 export type filterObject = {
@@ -88,32 +89,66 @@ async function getRecipeById(recipeId: string) {
     `SELECT * FROM recipes
     WHERE id = :id`,
     {
-      replacements:{id:recipeId}
+      replacements: { id: recipeId },
     }
-  )
+  );
   return results[0] as recipeBody;
 }
 
-async function updateRecipe(recipeId: string, body: recipeBody) {
+async function checkAuth(recipeId: string, userId: string) {
   const recipe = await getRecipeById(recipeId);
-  if (!recipe) {
-    return false;
+  if (userId === recipe.userId) {
+    return true;
   }
-  recipe.title = body.title;
-  recipe.description = body.description;
-  recipe.difficulty = body.difficulty;
-  recipe.cookingTime = body.cookingTime;
-  recipe.createdAt = body.createdAt;
-  recipe.ingredients = body.ingredients;
-  recipe.instructions = body.instructions;
-  recipe.rating = body.rating;
-  recipe.servings = body.servings;
-  return true;
+  return false;
 }
 
-async function addRecipe(body: recipeBody, userId: string, file:any) {
-  try{
+async function updateRecipe(recipeId: string, body: recipeBody, file: any) {
+  let imageUrl = body.imageUrl;
+  try {
+    // If a new file is provided, upload to Cloudinary
+    if (file) {
+      const uploadResult = await cloudinary.uploader.upload(file.path);
+      imageUrl = uploadResult ? uploadResult.url : body.imageUrl;
+    }
+    const updateFields = {
+      title: body.title,
+      description: body.description,
+      difficulty: body.difficulty,
+      cookingTime: body.cookingTime,
+      ingredients: JSON.stringify(body.ingredients),
+      instructions: JSON.stringify(body.instructions),
+      rating: body.rating,
+      servings: body.servings,
+      isPublic: body.isPublic,
+      imageUrl: imageUrl,
+    };
+    const [result] = await sequelize.query(
+      `UPDATE recipes SET
+        title = :title,
+        description = :description,
+        difficulty = :difficulty,
+        cookingTime = :cookingTime,
+        ingredients = :ingredients,
+        instructions = :instructions,
+        rating = :rating,
+        servings = :servings,
+        isPublic = :isPublic,
+        imageUrl = :imageUrl
+      WHERE id = :id`,
+      { replacements: { ...updateFields, id: recipeId } }
+    );
+    return await getRecipeById(recipeId);
+  } catch (err) {
+    console.error(err);
+    return;
+  } finally {
+    file && fs.promises.unlink(file.path);
+  }
+}
 
+async function addRecipe(body: recipeBody, userId: string, file: any) {
+  try {
     const recipeId = uuidv4();
     const uploadResult = await cloudinary.uploader.upload(file.path);
     const newRecipe = {
@@ -208,4 +243,5 @@ export default {
   addRecipe,
   deleteRecipe,
   getStats,
+  checkAuth,
 };

@@ -48,6 +48,7 @@ type recipeBody = {
   difficulty: string;
   rating: number;
   isPublic: boolean;
+  imageUrl:string;
   createdAt: string;
 };
 
@@ -82,13 +83,19 @@ function getRecipes(filters: filterObject) {
   return filteredRecipes;
 }
 
-function getRecipeById(recipeId: string) {
-  const recipe = recipes.find((r) => r.id === recipeId);
-  return recipe;
+async function getRecipeById(recipeId: string) {
+  const [results] = await sequelize.query(
+    `SELECT * FROM recipes
+    WHERE id = :id`,
+    {
+      replacements:{id:recipeId}
+    }
+  )
+  return results[0] as recipeBody;
 }
 
-function updateRecipe(recipeId: string, body: recipeBody) {
-  const recipe = getRecipeById(recipeId);
+async function updateRecipe(recipeId: string, body: recipeBody) {
+  const recipe = await getRecipeById(recipeId);
   if (!recipe) {
     return false;
   }

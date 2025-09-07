@@ -56,7 +56,7 @@ await queryInterface.createTable("recipes", {
         allowNull: false,
       },
       rating: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.FLOAT,
         allowNull:false,
       },
       userId:{

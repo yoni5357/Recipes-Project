@@ -8,8 +8,8 @@ function getRecipes(req:Request,res:Response){
     res.send(recipesModel.getRecipes(filters as filterObject));
 }
 
-function getRecipeById(req:Request,res:Response){
-    const recipe = recipesModel.getRecipeById(req.params.id);
+async function getRecipeById(req:Request,res:Response){
+    const recipe = await recipesModel.getRecipeById(req.params.id);
     if(!recipe){
         res.status(404);
         res.send("Recipe not found");

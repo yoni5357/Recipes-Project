@@ -65,6 +65,17 @@ const recipeSchema = {
                 enum: "Difficulty must be one of: easy, medium, hard."
             }
         },
+        rating: {
+
+            type: "number",
+            exclusiveMinimum: 0,
+            exclusiveMaximum: 5,
+            errorMessage: {
+                type: "Rating must be a number",
+                exclusiveMinimum: "Rating must be higher then 0",
+                exclusiveMaximum: "Rating must be lower then 5"
+            }
+        }
     },
     required: ["title", "description", "ingredients", "instructions", "cookingTime", "servings", "difficulty"],
     errorMessage: {

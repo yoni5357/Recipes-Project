@@ -30,10 +30,20 @@ function updateRecipe(req:Request,res:Response){
     }
 }
 
-function addRecipe(req:Request, res:Response){
+async function addRecipe(req:Request, res:Response){
     const body = req.body;
+    const userId = req.user.id;
+    const file = req.file;
+    let result;
+    try{
+        result = await recipesModel.addRecipe(body,userId,file);
+    } catch(err){
+        console.error("Error inserting new recipe to db:", err);
+        res.status(500).send("error inserting new recipe to db");
+        return;
+    }
     res.status(201);
-    res.send(recipesModel.addRecipe(body));
+    res.send(result);
 }
 
 function deleteRecipe(req:Request, res:Response){

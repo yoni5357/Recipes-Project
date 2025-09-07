@@ -1,79 +1,95 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import {v2 as cloudinary} from 'cloudinary';
+import { sequelize } from "../connections";
+import fs from "fs";
+import dotenv from 'dotenv';
+dotenv.config();
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const recipes = [
   {
-  id: "unique-id",
-  title: "Recipe Title",
-  description: "Brief description",
-  ingredients: ["ingredient 1", "ingredient 2"],
-  instructions: ["step 1", "step 2"],
-  cookingTime: 30, // in minutes
-  servings: 4,
-  difficulty: "easy", // easy, medium, hard
-  rating: 4.5,
-  createdAt: "2025-01-01T00:00:00.000Z"
-},
-{
-  id: "unique-id-2",
-  title: "Another Recipe",
-  description: "Another brief description",
-  ingredients: ["ingredient A", "ingredient B"],
-  instructions: ["step A", "step B"],
-  cookingTime: 45, // in minutes
-  servings: 2,
-  difficulty: "medium", // easy, medium, hard
-  rating: 4.0,
-  createdAt: "2025-02-01T00:00:00.000Z"
-}
-]
+    id: "unique-id",
+    title: "Recipe Title",
+    description: "Brief description",
+    ingredients: ["ingredient 1", "ingredient 2"],
+    instructions: ["step 1", "step 2"],
+    cookingTime: 30, // in minutes
+    servings: 4,
+    difficulty: "easy", // easy, medium, hard
+    rating: 4.5,
+    createdAt: "2025-01-01T00:00:00.000Z",
+  },
+  {
+    id: "unique-id-2",
+    title: "Another Recipe",
+    description: "Another brief description",
+    ingredients: ["ingredient A", "ingredient B"],
+    instructions: ["step A", "step B"],
+    cookingTime: 45, // in minutes
+    servings: 2,
+    difficulty: "medium", // easy, medium, hard
+    rating: 4.0,
+    createdAt: "2025-02-01T00:00:00.000Z",
+  },
+];
 
 type recipeBody = {
-  id:string;
-  title:string;
-  description:string;
-  ingredients:string[];
-  instructions:string[];
-  cookingTime:number;
-  servings:number;
-  difficulty:string;
-  rating:number;
-  createdAt:string;
-}
+  id: string;
+  title: string;
+  description: string;
+  ingredients: string[];
+  instructions: string[];
+  cookingTime: number;
+  servings: number;
+  difficulty: string;
+  rating: number;
+  isPublic: boolean;
+  createdAt: string;
+};
 
 export type filterObject = {
-  difficulty:string|null|undefined;
-  maxCookingTime:string|null|undefined;
-  search:string|null|undefined;
-}
+  difficulty: string | null | undefined;
+  maxCookingTime: string | null | undefined;
+  search: string | null | undefined;
+};
 
-
-function getRecipes(filters:filterObject){
+function getRecipes(filters: filterObject) {
   const filteredRecipes = recipes.filter((recipe) => {
     if (filters.difficulty && recipe.difficulty !== filters.difficulty) {
       return false;
     }
-    if (filters.maxCookingTime && recipe.cookingTime > parseInt(filters.maxCookingTime)) {
+    if (
+      filters.maxCookingTime &&
+      recipe.cookingTime > parseInt(filters.maxCookingTime)
+    ) {
       return false;
     }
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      if (!recipe.title.toLowerCase().includes(searchLower) && !recipe.description.toLowerCase().includes(searchLower)) {
+      if (
+        !recipe.title.toLowerCase().includes(searchLower) &&
+        !recipe.description.toLowerCase().includes(searchLower)
+      ) {
         return false;
       }
     }
     return true;
-  })
+  });
   return filteredRecipes;
 }
 
-function getRecipeById(recipeId:string){
-  const recipe = recipes.find(r => r.id === recipeId);
+function getRecipeById(recipeId: string) {
+  const recipe = recipes.find((r) => r.id === recipeId);
   return recipe;
 }
 
-function updateRecipe(recipeId:string, body:recipeBody){
+function updateRecipe(recipeId: string, body: recipeBody) {
   const recipe = getRecipeById(recipeId);
-  if(!recipe){
+  if (!recipe) {
     return false;
   }
   recipe.title = body.title;
@@ -88,16 +104,60 @@ function updateRecipe(recipeId:string, body:recipeBody){
   return true;
 }
 
-function addRecipe(body:recipeBody){
-  const recipeId = uuidv4();
-  const newRecipe = {id:recipeId,...body};
-  recipes.push(newRecipe);
-  return newRecipe;
+async function addRecipe(body: recipeBody, userId: string, file:any) {
+  try{
+
+    const recipeId = uuidv4();
+    const uploadResult = await cloudinary.uploader.upload(file.path);
+    const newRecipe = {
+      id: recipeId,
+      ...body,
+      userId,
+      ingredients: JSON.stringify(body.ingredients),
+      instructions: JSON.stringify(body.instructions),
+      imageUrl: uploadResult ? uploadResult.url : null,
+    };
+    await sequelize.query(
+      `INSERT INTO recipes (
+      id,
+      title,
+      description,
+      ingredients,
+      instructions,
+      cookingTime,
+      servings,
+      difficulty,
+      imageUrl,
+      isPublic,
+      rating,
+      userId
+      )
+      VALUES (
+      :id,
+      :title,
+      :description,
+      :ingredients,
+      :instructions,
+      :cookingTime,
+      :servings,
+      :difficulty,
+      :imageUrl,
+      :isPublic,
+      :rating,
+      :userId
+      )`,
+      { replacements: { ...newRecipe } }
+    );
+    console.log(newRecipe);
+    return newRecipe;
+  } finally {
+    file && fs.promises.unlink(file.path);
+  }
 }
 
-function deleteRecipe(recipeId:string){
-  const recipeToDelete = recipes.find(r => r.id = recipeId);
-  if(!recipeToDelete){
+function deleteRecipe(recipeId: string) {
+  const recipeToDelete = recipes.find((r) => (r.id = recipeId));
+  if (!recipeToDelete) {
     return false;
   }
   const recipeIndex = recipes.indexOf(recipeToDelete);
@@ -105,21 +165,27 @@ function deleteRecipe(recipeId:string){
   return true;
 }
 
-function getStats(){
+function getStats() {
   const totalRecipes = recipes.length;
   const averageCookingTime = getAvereageCookingTime();
   const recipesByDifficulty = getRecipesByDifficulty();
-  return {totalRecipes:totalRecipes, averageCookingTime:averageCookingTime, recipesByDifficulty:recipesByDifficulty};
+  return {
+    totalRecipes: totalRecipes,
+    averageCookingTime: averageCookingTime,
+    recipesByDifficulty: recipesByDifficulty,
+  };
 }
 
-function getAvereageCookingTime(){
-  const avg = recipes.reduce((acc, recipe) => acc + recipe.cookingTime, 0) / recipes.length;
+function getAvereageCookingTime() {
+  const avg =
+    recipes.reduce((acc, recipe) => acc + recipe.cookingTime, 0) /
+    recipes.length;
   return avg;
 }
-function getRecipesByDifficulty(){
-  const difficultyCount: {[key: string]: number} = {};
+function getRecipesByDifficulty() {
+  const difficultyCount: { [key: string]: number } = {};
   recipes.forEach((recipe) => {
-    if(difficultyCount[recipe.difficulty]){
+    if (difficultyCount[recipe.difficulty]) {
       difficultyCount[recipe.difficulty]++;
     } else {
       difficultyCount[recipe.difficulty] = 1;
@@ -128,4 +194,11 @@ function getRecipesByDifficulty(){
   return difficultyCount;
 }
 
-export default {getRecipes,getRecipeById,updateRecipe,addRecipe,deleteRecipe,getStats};
+export default {
+  getRecipes,
+  getRecipeById,
+  updateRecipe,
+  addRecipe,
+  deleteRecipe,
+  getStats,
+};

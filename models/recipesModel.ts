@@ -101,6 +101,8 @@ async function getRecipeById(recipeId: string) {
 
 async function checkAuth(recipeId: string, userId: string) {
   const recipe = await getRecipeById(recipeId);
+  console.log("userId: ",userId)
+  console.log("recipe.userId: ",recipe.userId)
   if (userId === recipe.userId) {
     return true;
   }
@@ -204,6 +206,21 @@ async function addRecipe(body: recipeBody, userId: string, file: any) {
 }
 
 async function deleteRecipe(recipeId: string) {
+  // Get the recipe to find the imageUrl (if any)
+  const recipe = await getRecipeById(recipeId);
+  // If there is an imageUrl, attempt to delete from Cloudinary
+  if (recipe.imageUrl) {
+    // Extract public_id from the imageUrl
+    // Cloudinary URLs are typically: https://res.cloudinary.com/<cloud_name>/image/upload/v<version>/<public_id>.<ext>
+    const urlParts = recipe.imageUrl.split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    const publicIdWithExt = fileName.split('.')[0];
+    // If your uploads are in a folder, you may need to include the folder in public_id
+    // For more robust extraction, remove everything before '/upload/'
+    let publicId = publicIdWithExt;
+    console.log(publicId);
+    await cloudinary.uploader.destroy(publicId);
+  }
   const [result]: any = await sequelize.query(
     `DELETE FROM recipes WHERE id = :recipeId`,
     { replacements: { recipeId } }

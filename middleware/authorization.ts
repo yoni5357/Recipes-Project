@@ -6,7 +6,7 @@ import { AuthorizationError } from "../errors";
 
 export async function checkRecipeOwnership(req: Request, res: Response, next: NextFunction) {
     const recipeId = req.params.id;
-    const userId = req.user;
+    const userId = req.user.id;
     try {
         const isAuthorized = await recipesModel.checkAuth(recipeId, userId);
         if (!isAuthorized) {

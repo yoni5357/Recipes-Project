@@ -27,6 +27,6 @@ router.put(
   recipeValidation,
   recipesController.updateRecipe
 );
-router.delete("/:id", recipesController.deleteRecipe);
+router.delete("/:id", authenticateToken, checkRecipeOwnership, recipesController.deleteRecipe);
 
 export default router;

@@ -3,6 +3,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { sequelize } from "../connections";
 import fs from "fs";
 import dotenv from "dotenv";
+import { NotFoundError } from "../errors";
 dotenv.config();
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -92,6 +93,9 @@ async function getRecipeById(recipeId: string) {
       replacements: { id: recipeId },
     }
   );
+  if(!results[0]){
+    throw new NotFoundError("Recipe does not exist");
+  }
   return results[0] as recipeBody;
 }
 
@@ -150,7 +154,10 @@ async function updateRecipe(recipeId: string, body: recipeBody, file: any) {
 async function addRecipe(body: recipeBody, userId: string, file: any) {
   try {
     const recipeId = uuidv4();
-    const uploadResult = await cloudinary.uploader.upload(file.path);
+    let uploadResult = null;
+    if (file) {
+      uploadResult = await cloudinary.uploader.upload(file.path);
+    }
     const newRecipe = {
       id: recipeId,
       ...body,
@@ -190,20 +197,21 @@ async function addRecipe(body: recipeBody, userId: string, file: any) {
       )`,
       { replacements: { ...newRecipe } }
     );
-    console.log(newRecipe);
     return newRecipe;
   } finally {
     file && fs.promises.unlink(file.path);
   }
 }
 
-function deleteRecipe(recipeId: string) {
-  const recipeToDelete = recipes.find((r) => (r.id = recipeId));
-  if (!recipeToDelete) {
+async function deleteRecipe(recipeId: string) {
+  const [result]: any = await sequelize.query(
+    `DELETE FROM recipes WHERE id = :recipeId`,
+    { replacements: { recipeId } }
+  );
+  // For MySQL, result.affectedRows; for SQLite, result.changes
+  if (result.affectedRows === 0) {
     return false;
   }
-  const recipeIndex = recipes.indexOf(recipeToDelete);
-  delete recipes[recipeIndex];
   return true;
 }
 

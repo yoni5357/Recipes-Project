@@ -1,3 +1,7 @@
+
+
+
+
 export class BaseError extends Error{
     public readonly status: number;
 
@@ -17,5 +21,11 @@ export class NotFoundError extends BaseError{
 export class ValidationError extends BaseError{
     constructor(message:string = "Validation Faild"){
         super(message,400);
+    }
+}
+
+export class AuthorizationError extends BaseError{
+    constructor(message:string = "User not authorized"){
+        super(message,403);
     }
 }

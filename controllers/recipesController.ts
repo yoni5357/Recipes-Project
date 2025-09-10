@@ -1,63 +1,73 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import recipesModel, { filterObject } from "../models/recipesModel";
+import { NotFoundError } from "../errors";
 
 
-function getRecipes(req:Request,res:Response){
-    const filters = req.query
-    res.status(200);
-    res.send(recipesModel.getRecipes(filters as filterObject));
-}
-
-async function getRecipeById(req:Request,res:Response){
-    const recipe = await recipesModel.getRecipeById(req.params.id);
-    if(!recipe){
-        res.status(404);
-        res.send("Recipe not found");
-    } else {
+function getRecipes(req: Request, res: Response, next: NextFunction) {
+    try {
+        const filters = req.query;
         res.status(200);
-        res.send(recipe);
+        res.send(recipesModel.getRecipes(filters as filterObject));
+    } catch (err) {
+        next(err);
     }
 }
 
-async function updateRecipe(req:Request,res:Response){
+async function getRecipeById(req: Request, res: Response, next: NextFunction) {
+    try {
+        const recipe = await recipesModel.getRecipeById(req.params.id);
+        if (!recipe) {
+            res.status(404);
+            res.send("Recipe not found");
+        } else {
+            res.status(200);
+            res.send(recipe);
+        }
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function updateRecipe(req: Request, res: Response, next: NextFunction) {
     const recipeId = req.params.id;
     const updatedRecipe = req.body;
     const file = req.file;
-    try{
-        const newRecipe = await recipesModel.updateRecipe(recipeId,updatedRecipe,file);
-        if(!newRecipe){
+    try {
+        const newRecipe = await recipesModel.updateRecipe(recipeId, updatedRecipe, file);
+        if (!newRecipe) {
             res.sendStatus(404);
         } else {
             res.status(201);
             res.send(newRecipe);
         }
-    }catch(err){
-        console.error("Error updating recipe: ",err);
+    } catch (err) {
+        next(err);
     }
 }
 
-async function addRecipe(req:Request, res:Response){
+async function addRecipe(req: Request, res: Response, next: NextFunction) {
     const body = req.body;
     const userId = req.user.id;
     const file = req.file;
-    let result;
-    try{
-        result = await recipesModel.addRecipe(body,userId,file);
-    } catch(err){
-        console.error("Error inserting new recipe to db:", err);
-        res.status(500).send("error inserting new recipe to db");
-        return;
+    try {
+        const result = await recipesModel.addRecipe(body, userId, file);
+        res.status(201);
+        res.send(result);
+    } catch (err) {
+        next(err);
     }
-    res.status(201);
-    res.send(result);
 }
 
-function deleteRecipe(req:Request, res:Response){
+async function deleteRecipe(req: Request, res: Response, next: NextFunction) {
     const recipeId = req.params.id;
-    if(!recipesModel.deleteRecipe(recipeId)){
-        res.status(404);
-    } else {
+    try {
+        const deleted = await recipesModel.deleteRecipe(recipeId);
+        if (!deleted) {
+            throw new NotFoundError("Recipe not found");
+        }
         res.sendStatus(204);
+    } catch (err) {
+        next(err);
     }
 }
 
